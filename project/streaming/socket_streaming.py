@@ -1,16 +1,12 @@
-from pyspark.sql import SparkSession
 
-spark = SparkSession \
-    .builder \
-    .enableHiveSupport() \
-    .getOrCreate()
+class StreamingSocket:
+    def __init__(self, spark):
+        self.spark = spark
 
-activity_data_path = "../../data/activity-data/"
-static = spark.read.json(activity_data_path)
-dataSchema = static.schema
+    def run(self):
+        # use "nc -lk 9999" for writing records for this example
+        read_stream_socket = self.spark.readStream.format("socket").option("host", "localhost").option("port", "9999").\
+            option("includeTimestamp", "true").load()
 
-# use "nc -lk 9999" for writing records for this example
-
-spark.readStream.format("socket").option("host", "localhost").option("port", "9999").option("includeTimestamp", "true").load()\
-  .writeStream.outputMode("append").format("console").option("truncate", "false").start().awaitTermination()
+        read_stream_socket.writeStream.outputMode("update").format("console").option("truncate", "false").start().awaitTermination()
 
